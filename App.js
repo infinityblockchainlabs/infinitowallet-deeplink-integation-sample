@@ -10,9 +10,8 @@ import {
 } from "react-native";
 
 const infinitoWalletScheme = "infinitowallet://assets"
-const appLinkScheme = "deepLink://"
+const appLinkScheme = "deep-link://"
 const appLinkExtraParam = "id=123"
-const urlLink = "http://google.com.vn"
 
 export default class App extends Component {
   constructor(props) {
@@ -22,10 +21,26 @@ export default class App extends Component {
       coin: "btc",
       useWalletName: "true",
       params: "",
-      // callback: `${appLinkScheme}`,
-      callback: `${urlLink}`,
+      callback: `${appLinkScheme}`,
       tabIndex: 0
     };
+
+    Linking.getInitialURL().
+    then((url) => {
+      console.log("deepLinkCallBack url = ", url)
+    }).catch(err => console.error('getInitialURL error = ', err));
+  }
+
+  componentDidMount () {
+    Linking.addEventListener("url", this.handleCallBackFromDeepLink);
+  }
+
+  componentWillUnmount () {
+    Linking.removeEventListener('url', this.handleCallBackFromDeepLink)
+  }
+
+  handleCallBackFromDeepLink = async (event: Object) => {
+    console.log("deepLinkCallBack event= ", event)
   }
 
   openAppLink = () => {
@@ -40,10 +55,10 @@ export default class App extends Component {
     var isGetPublicKeyAction = (this.state.action === "getPublicKey")
 
     return isGetAddressAction
-        ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}`
+        ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`
         : (isGetPublicKeyAction
-            ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}`
-            : `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&params=${this.state.params}&callback=${this.state.callback}`);
+            ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`
+            : `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&params=${this.state.params}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`);
   };
 
   onChange = (key, val) => {
@@ -52,7 +67,7 @@ export default class App extends Component {
 
   render() {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, margin: 20 }}>
       <ScrollView>
       <Text style={styles.title}>Infinito Wallet App Link</Text>
 
@@ -77,7 +92,7 @@ export default class App extends Component {
             : { color: "black", textAlign: "center" }
           }
         >
-          Get wallet address
+          Get wallet addresses
         </Text>
       </TouchableOpacity>
 
@@ -91,7 +106,7 @@ export default class App extends Component {
         onPress={() => {
           this.onChange("tabIndex", 1);
           this.onChange("action", "sent");
-          this.onChange("params", JSON.stringify({ from: 'ABC', to: 'XYZ', value: 0.00001 }));
+          this.onChange("params", JSON.stringify({ from: 'ABC', to: 'XYZ', password: "Password of Passphrase", value: "0.00001" }));
         }}
       >
         <Text
@@ -115,7 +130,7 @@ export default class App extends Component {
         onPress={() => {
           this.onChange("tabIndex", 2);
           this.onChange("action", "sentRaw");
-          this.onChange("params", JSON.stringify({ rawTx: "01000000011e133bf22e9275344a7b1c0f6a891934c35a764a87513b8462f456e5f9d69090010000006a473044022032da611a90c7edf7735046c31c6dfc212f3d855eb7da8ce0f2daa62156d5eabb0220047c499dd46b8c7f6ad5d57bb4d3712a503e82be58b93f301ed597e8f434b56b0121025a1109e02a4dae3ec2a5dc03e52b76ea4030e0d2cbf849c61df113a5b48ac53fffffffff01e8030000000000001976a914f6a2fa24781786829cb122035dcf3fc8faee5e2d88ac00000000" }));
+          this.onChange("params", JSON.stringify({ rawTx: "rawTx" }));
         }}
       >
         <Text
@@ -139,7 +154,7 @@ export default class App extends Component {
         onPress={() => {
           this.onChange("tabIndex", 3);
           this.onChange("action", "sign");
-          this.onChange("params", JSON.stringify({ data: "Sign BTC message", password: "2tpmI8fa" }));
+          this.onChange("params", JSON.stringify({ data: "Sign BTC message", password: "Password of Passphrase" }));
         }}
       >
         <Text
@@ -232,8 +247,7 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5FCFF",
-    padding: 10
+    backgroundColor: "#F5FCFF"
   },
   input: {
     width: Dimensions.get("window").width - 20,
