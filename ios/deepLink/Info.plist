@@ -27,7 +27,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>deepLink</string>
+				<string>deep-link</string>
 			</array>
 		</dict>
 	</array>
