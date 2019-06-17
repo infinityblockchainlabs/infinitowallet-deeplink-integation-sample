@@ -67,7 +67,7 @@ export default class App extends Component {
 
   render() {
     return (
-      <View style={{ flex: 1, margin: 20 }}>
+      <View style={{ flex: 1, marginTop: 40, marginStart: 10, marginEnd: 10 }}>
       <ScrollView>
       <Text style={styles.title}>Infinito Wallet App Link</Text>
 
@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#4388FF",
     fontWeight: "bold",
-    fontSize: 25
+    fontSize: 25,
+    alignSelf: "center"
   }
 });
