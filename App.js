@@ -3,15 +3,17 @@ import {
   Linking,
   StyleSheet,
   Text,
+  TextInput,
   View,
   TouchableOpacity,
   ScrollView,
   Dimensions
 } from "react-native";
 
+var parse = require('url-parse')
+
 const infinitoWalletScheme = "infinitowallet://assets"
 const appLinkScheme = "deep-link://"
-const appLinkExtraParam = "id=123"
 
 export default class App extends Component {
   constructor(props) {
@@ -19,46 +21,51 @@ export default class App extends Component {
     this.state = {
       action: "getAddresses",
       coin: "btc",
-      useWalletName: "true",
+      useWalletName: "",
       params: "",
-      callback: `${appLinkScheme}`,
+      callback: "",
+      response: "",
       tabIndex: 0
     };
 
+    Linking.addEventListener("url", this.handleCallBackFromDeepLink);
     Linking.getInitialURL().
     then((url) => {
-      console.log("deepLinkCallBack url = ", url)
+      if (url) {
+        this.handleCallBackFromDeepLink({url})
+      }
     }).catch(err => console.error('getInitialURL error = ', err));
   }
 
-  componentDidMount () {
-    Linking.addEventListener("url", this.handleCallBackFromDeepLink);
+  handleCallBackFromDeepLink = async (callback: Object) => {
+    try {
+      let deepLinkUrl = parse(callback.url, false)
+      console.log("handleCallBackFromDeepLink deepLinkUrl = ", deepLinkUrl)
+
+      console.log("handleCallBackFromDeepLink deepLinkUrl result = ", deepLinkUrl["result"])
+
+      let deepLinkResult = JSON.parse(deepLinkUrl["result"])
+      console.log("handleCallBackFromDeepLink deepLinkResult = ", deepLinkResult)
+
+      // this.onChange("response", deepLinkUrl.origin)
+    } catch (error) {
+      console.log("handleCallBackFromDeepLink error = ", error)
+    }
   }
 
-  componentWillUnmount () {
-    Linking.removeEventListener('url', this.handleCallBackFromDeepLink)
-  }
-
-  handleCallBackFromDeepLink = async (event: Object) => {
-    console.log("deepLinkCallBack event= ", event)
-  }
-
-  openAppLink = () => {
-    let appLink = this.getLink();
-    Linking.openURL(appLink).catch(err =>
-      alert("An error occurred: " + err)
+  onGetRequest = () => {
+    let request = this.getRequest();
+    Linking.openURL(request).catch(err =>
+      alert("onGetRequest error: ", err)
     );
   };
 
-  getLink = () => {
-    var isGetAddressAction = (this.state.action === "getAddress" || this.state.action === "getAddresses")
-    var isGetPublicKeyAction = (this.state.action === "getPublicKey")
+  getRequest = () => {
+    var isGetWalletName = (this.state.action === "getAddress" || this.state.action === "getAddresses" || this.state.action === "getPublicKey")
 
-    return isGetAddressAction
-        ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`
-        : (isGetPublicKeyAction
-            ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`
-            : `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&params=${this.state.params}&callback=${this.state.callback}${this.state.action}?${appLinkExtraParam}`);
+    return isGetWalletName
+        ? `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&useWalletName=${this.state.useWalletName}&callback=${appLinkScheme}${this.state.callback}`
+        : `${infinitoWalletScheme}/${this.state.action}?coin=${this.state.coin}&params=${this.state.params}&callback=${appLinkScheme}${this.state.callback}`
   };
 
   onChange = (key, val) => {
@@ -66,180 +73,203 @@ export default class App extends Component {
   };
 
   render() {
+    var isGetWalletName: boolean = this.state.tabIndex === 0 || this.state.tabIndex === 4 ? true : false
+
     return (
-      <View style={{ flex: 1, marginTop: 40, marginStart: 10, marginEnd: 10 }}>
+    <View style={{ flex: 1, marginTop: 60, marginStart: 10, marginEnd: 10, marginBottom: 60 }}>
       <ScrollView>
-      <Text style={styles.title}>Infinito Wallet App Link</Text>
+        <Text style={styles.title}>Infinito Wallet Deep Link</Text>
 
-      <View style={styles.wrapTab}>
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          this.state.tabIndex == 0 && {
-            backgroundColor: "#4388FF"
-          }
-        ]}
-        onPress={() => {
-          this.onChange("tabIndex", 0);
-          this.onChange("action", "getAddresses");
-          this.onChange("params", "");
-        }}
-      >
-        <Text
-          style={
-            this.state.tabIndex == 0
-            ? { color: "white", textAlign: "center" }
-            : { color: "black", textAlign: "center" }
-          }
+        <View style={styles.wrapTab}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            this.state.tabIndex == 0 && {
+              backgroundColor: "#4388FF"
+            }
+          ]}
+          onPress={() => {
+            this.onChange("tabIndex", 0);
+            this.onChange("action", "getAddresses");
+            this.onChange("useWalletName", "");
+            this.onChange("params", "");
+          }}
         >
-          Get wallet addresses
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          this.state.tabIndex == 1 && {
-            backgroundColor: "#4388FF"
-          }
-        ]}
-        onPress={() => {
-          this.onChange("tabIndex", 1);
-          this.onChange("action", "sent");
-          this.onChange("params", JSON.stringify({ from: 'ABC', to: 'XYZ', password: "Password of Passphrase", value: "0.00001" }));
-        }}
-      >
-        <Text
-          style={
-            this.state.tabIndex == 1
-            ? { color: "white", textAlign: "center" }
-            : { color: "black", textAlign: "center" }
-          }
-        >
-          Sent Coin
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          this.state.tabIndex == 2 && {
-            backgroundColor: "#4388FF"
-          }
-        ]}
-        onPress={() => {
-          this.onChange("tabIndex", 2);
-          this.onChange("action", "sentRaw");
-          this.onChange("params", JSON.stringify({ rawTx: "rawTx" }));
-        }}
-      >
-        <Text
-          style={
-            this.state.tabIndex == 2
-            ? { color: "white", textAlign: "center" }
-            : { color: "black", textAlign: "center" }
-          }
-        >
-          Sent Raw
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          this.state.tabIndex == 3 && {
-            backgroundColor: "#4388FF"
-          }
-        ]}
-        onPress={() => {
-          this.onChange("tabIndex", 3);
-          this.onChange("action", "sign");
-          this.onChange("params", JSON.stringify({ data: "Sign BTC message", password: "Password of Passphrase" }));
-        }}
-      >
-        <Text
-          style={
-            this.state.tabIndex == 3
-            ? { color: "white", textAlign: "center" }
-            : { color: "black", textAlign: "center" }
-          }
-        >
-          Sign Data
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.tab,
-          this.state.tabIndex == 4 && {
-            backgroundColor: "#4388FF"
-          }
-        ]}
-        onPress={() => {
-          this.onChange("tabIndex", 4);
-          this.onChange("action", "getPublicKey");
-          this.onChange("params", "");
-        }}
-      >
-        <Text
-          style={
-            this.state.tabIndex == 4
-              ? { color: "white", textAlign: "center" }
+          <Text
+            style={
+              this.state.tabIndex == 0
+              ? { color: "white", textAlign: "center", fontWeight: "bold" }
               : { color: "black", textAlign: "center" }
-          }
+            }
+          >
+            Get wallet addresses
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ backgroundColor: "#4388FF", width: 1, }} />
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            this.state.tabIndex == 1 && {
+              backgroundColor: "#4388FF"
+            }
+          ]}
+          onPress={() => {
+            this.onChange("tabIndex", 1);
+            this.onChange("action", "sent");
+            this.onChange("useWalletName", "");
+            this.onChange("params", JSON.stringify({ from: 'ABC', to: 'XYZ', password: "Password of Passphrase", value: "0.00001" }));
+          }}
         >
-          Get public key
+          <Text
+            style={
+              this.state.tabIndex == 1
+              ? { color: "white", textAlign: "center", fontWeight: "bold" }
+              : { color: "black", textAlign: "center" }
+            }
+          >
+            Sent Coin
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ backgroundColor: "#4388FF", width: 1, }} />
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            this.state.tabIndex == 2 && {
+              backgroundColor: "#4388FF"
+            }
+          ]}
+          onPress={() => {
+            this.onChange("tabIndex", 2);
+            this.onChange("action", "sentRaw");
+            this.onChange("useWalletName", "");
+            this.onChange("params", JSON.stringify({ rawTx: "rawTx" }));
+          }}
+        >
+          <Text
+            style={
+              this.state.tabIndex == 2
+              ? { color: "white", textAlign: "center", fontWeight: "bold" }
+              : { color: "black", textAlign: "center" }
+            }
+          >
+            Sent Raw
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ backgroundColor: "#4388FF", width: 1, }} />
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            this.state.tabIndex == 3 && {
+              backgroundColor: "#4388FF"
+            }
+          ]}
+          onPress={() => {
+            this.onChange("tabIndex", 3);
+            this.onChange("action", "sign");
+            this.onChange("useWalletName", "");
+            this.onChange("params", JSON.stringify({ data: "Sign BTC message", password: "Password of Passphrase" }));
+          }}
+        >
+          <Text
+            style={
+              this.state.tabIndex == 3
+              ? { color: "white", textAlign: "center", fontWeight: "bold" }
+              : { color: "black", textAlign: "center" }
+            }
+          >
+            Sign Data
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ backgroundColor: "#4388FF", width: 1, }} />
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            this.state.tabIndex == 4 && {
+              backgroundColor: "#4388FF"
+            }
+          ]}
+          onPress={() => {
+            this.onChange("tabIndex", 4);
+            this.onChange("action", "getPublicKey");
+            this.onChange("useWalletName", "");
+            this.onChange("params", "");
+          }}
+        >
+          <Text
+            style={
+              this.state.tabIndex == 4
+                ? { color: "white", textAlign: "center", fontWeight: "bold" }
+                : { color: "black", textAlign: "center" }
+            }
+          >
+            Get public key
+          </Text>
+        </TouchableOpacity>
+        </View>
+
+        <TextInput
+            style={styles.input}
+            underlineColorAndroid="transparent"
+            editable = {false}
+            value={this.state.action}
+        />
+
+        <TextInput
+            style={styles.input}
+            underlineColorAndroid="transparent"
+            editable = {false}
+            value={this.state.coin}
+        />
+
+        <TextInput
+            style={styles.input}
+            underlineColorAndroid="transparent"
+            placeholder={isGetWalletName ? "useWalletName: true or false" : ""}
+            value={this.state.useWalletName}
+            editable={isGetWalletName}
+            onChangeText={(text) => this.onChange("useWalletName", text)}
+        />
+
+        <TextInput
+            style={styles.input}
+            underlineColorAndroid="transparent"
+            editable = {false}
+            multiline = {true}
+            value={this.state.params}
+        />
+
+        <TextInput
+            style={styles.input}
+            underlineColorAndroid="transparent"
+            placeholder="callback param: getAddress?appId=ABC&id=123"
+            multiline = {true}
+            onChangeText={(text) => this.onChange("callback", text)}
+        />
+
+        <Text style={{ marginTop: 30, color: "black", fontWeight: "bold" }}>
+          Request: "{this.getRequest()}"
         </Text>
-      </TouchableOpacity>
-    </View>
 
-      <Text
-          style={styles.input}
-          underlineColorAndroid="transparent"
-      >
-        {this.state.action}
-      </Text>
-
-      <Text
-          style={styles.input}
-          underlineColorAndroid="transparent"
-      >
-        {this.state.coin}
-      </Text>
-
-      <Text
-          style={styles.input}
-          underlineColorAndroid="transparent"
-      >
-        {this.state.useWalletName}
-      </Text>
-
-      <Text
-          style={styles.input}
-          underlineColorAndroid="transparent"
-      >
-        {this.state.params}
-      </Text>
-
-      <Text
-          style={styles.input}
-          underlineColorAndroid="transparent"
-      >
-        {this.state.callback}
-      </Text>
-
-        <Text style={{ marginTop: 40, color: "red" }}>
-          App link: "{this.getLink()}"
+        <Text style={{ marginTop: 20, color: "black", fontWeight: "bold" }}>
+          Response: "{this.state.response}"
         </Text>
 
         <TouchableOpacity
-          onPress={this.openAppLink}
+          onPress={this.onGetRequest}
           style={styles.button}
         >
           <Text style={styles.btnText}>Open App Link</Text>
         </TouchableOpacity>
       </ScrollView>
-      </View>
+    </View>
     );
   }
 }
@@ -251,23 +281,24 @@ const styles = StyleSheet.create({
   },
   input: {
     width: Dimensions.get("window").width - 20,
-    height: 40,
+    height: 30,
     marginTop: 20,
     borderBottomWidth: 1,
     textAlignVertical: "center",
-    borderColor: "grey",
-    color: "black"
+    borderBottomColor: "black",
+    color: "black",
+    fontWeight: "bold"
   },
   button: {
     backgroundColor: "#4388FF",
     paddingTop: 10,
     paddingBottom: 10,
     paddingLeft: 30,
-    paddingRight: 30,
     marginTop: 40
   },
   btnText: {
-    color: "white"
+    color: "white",
+    fontWeight: "bold"
   },
   wrapTab: {
     flexDirection: "row",
