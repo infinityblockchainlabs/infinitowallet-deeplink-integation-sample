@@ -19,7 +19,8 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      action: "getAddresses",
+      // action: "getAddresses",
+      action: "getAddress",
       coin: "btc",
       useWalletName: "",
       params: "",
@@ -34,22 +35,19 @@ export default class App extends Component {
       if (url) {
         this.handleCallBackFromDeepLink({url})
       }
-    }).catch(err => console.error('getInitialURL error = ', err));
+    }).catch(err => console.error('appLink error = ', err));
   }
 
   handleCallBackFromDeepLink = async (callback: Object) => {
+    console.log("appLink callback = ", callback)
+
     try {
-      let deepLinkUrl = parse(callback.url, false)
-      console.log("handleCallBackFromDeepLink deepLinkUrl = ", deepLinkUrl)
+      let deepLinkUrl = callback.url
+      console.log("appLink deepLinkUrl = ", deepLinkUrl)
 
-      console.log("handleCallBackFromDeepLink deepLinkUrl result = ", deepLinkUrl["result"])
-
-      let deepLinkResult = JSON.parse(deepLinkUrl["result"])
-      console.log("handleCallBackFromDeepLink deepLinkResult = ", deepLinkResult)
-
-      // this.onChange("response", deepLinkUrl.origin)
+      this.onChange("response", deepLinkUrl)
     } catch (error) {
-      console.log("handleCallBackFromDeepLink error = ", error)
+      console.log("appLink error = ", error)
     }
   }
 
@@ -90,9 +88,13 @@ export default class App extends Component {
           ]}
           onPress={() => {
             this.onChange("tabIndex", 0);
-            this.onChange("action", "getAddresses");
+            // this.onChange("action", "getAddresses");
+            this.onChange("action", "getAddress");
             this.onChange("useWalletName", "");
             this.onChange("params", "");
+            this.onChange("callback", "");
+            this.onChange("response", "");
+
           }}
         >
           <Text
@@ -119,7 +121,9 @@ export default class App extends Component {
             this.onChange("tabIndex", 1);
             this.onChange("action", "sent");
             this.onChange("useWalletName", "");
-            this.onChange("params", JSON.stringify({ from: 'ABC', to: 'XYZ', password: "Password of Passphrase", value: "0.00001" }));
+            this.onChange("params", JSON.stringify({ from: 'Address ABC', to: 'Address DEF', value: "0.00001" }));
+            this.onChange("callback", "");
+            this.onChange("response", "");
           }}
         >
           <Text
@@ -147,6 +151,8 @@ export default class App extends Component {
             this.onChange("action", "sentRaw");
             this.onChange("useWalletName", "");
             this.onChange("params", JSON.stringify({ rawTx: "rawTx" }));
+            this.onChange("callback", "");
+            this.onChange("response", "");
           }}
         >
           <Text
@@ -171,9 +177,11 @@ export default class App extends Component {
           ]}
           onPress={() => {
             this.onChange("tabIndex", 3);
-            this.onChange("action", "sign");
+            this.onChange("action", "");
             this.onChange("useWalletName", "");
-            this.onChange("params", JSON.stringify({ data: "Sign BTC message", password: "Password of Passphrase" }));
+            this.onChange("params", JSON.stringify({ data: "Sign BTC message" }));
+            this.onChange("callback", "");
+            this.onChange("response", "");
           }}
         >
           <Text
@@ -201,6 +209,8 @@ export default class App extends Component {
             this.onChange("action", "getPublicKey");
             this.onChange("useWalletName", "");
             this.onChange("params", "");
+            this.onChange("callback", "");
+            this.onChange("response", "");
           }}
         >
           <Text
@@ -251,6 +261,7 @@ export default class App extends Component {
             underlineColorAndroid="transparent"
             placeholder="callback param: getAddress?appId=ABC&id=123"
             multiline = {true}
+            value={this.state.callback}
             onChangeText={(text) => this.onChange("callback", text)}
         />
 
@@ -281,8 +292,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: Dimensions.get("window").width - 20,
-    height: 30,
-    marginTop: 20,
+    height: 60,
     borderBottomWidth: 1,
     textAlignVertical: "center",
     borderBottomColor: "black",
